@@ -19,6 +19,7 @@ import net.ccbluex.liquidbounce.utils.CPSCounter;
 import net.ccbluex.liquidbounce.utils.ClientUtils;
 import net.ccbluex.liquidbounce.utils.RotationUtils;
 import net.ccbluex.liquidbounce.utils.render.ImageUtils;
+import net.ccbluex.liquidbounce.utils.render.IconUtils;
 import net.ccbluex.liquidbounce.utils.render.RenderUtils;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.LoadingScreenRenderer;
@@ -49,10 +50,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 import static org.objectweb.asm.Opcodes.PUTFIELD;
 
@@ -91,7 +95,7 @@ public abstract class MixinMinecraft {
 
     @Shadow
     @Final
-    public File mcDataDir;
+    public String mcDataDir;
 
     @Shadow
     public int displayWidth;
@@ -270,15 +274,14 @@ public abstract class MixinMinecraft {
     }
 
 
+    /**
+     * @author DinoFeng
+     */
     @Inject(method = "setWindowIcon", at = @At("HEAD"), cancellable = true)
     private void setWindowIcon(CallbackInfo callbackInfo) throws IOException {
-        if (Util.getOSType() != Util.EnumOS.OSX) {
-            BufferedImage image = ImageIO.read(this.getClass().getResourceAsStream("/assets/minecraft/fdpclient/misc/icon.png"));
-            if (image.getWidth() != 32 || image.getHeight() != 32) {
-                image = ImageUtils.resizeImage(image, 32, 32);
-            }
-            Display.setIcon(new ByteBuffer[]{ImageUtils.readImageToBuffer(ImageUtils.resizeImage(image, 16, 16)),
-                    ImageUtils.readImageToBuffer(image)});
+        final ByteBuffer[] favicon = IconUtils.INSTANCE.getFavicon();
+        if (favicon != null) {
+            Display.setIcon(favicon);
             callbackInfo.cancel();
         }
     }
